@@ -1,15 +1,5 @@
 # Armada
 
-
-    #      ####    #   #     #     ####      #   
-  # #     #   #   ## ##    # #     #   #    # #  
- #   #    #   #   # # #   #   #    #    #  #   # 
- #   #    ####    #   #   #   #    #    #  #   # 
- #####    # #     #   #   #####    #    #  ##### 
- #   #    #  #    #   #   #   #    #   #   #   # 
- #   #    #   #   #   #   #   #    ####    #   # 
-
-
 Armada is a collection of Ansible playbooks for managing Docker images and registries.  
 Think of it as your fleet of automation tools for container cleanup, retagging, and migration. 🚢
 
