@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Ansible
+*.retry
+.ansible/
+collections/
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env / secrets (keep vault files, avoid plain-text secrets)
+.env
+*.vault_pass
+

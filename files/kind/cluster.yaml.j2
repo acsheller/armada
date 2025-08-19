@@ -1,0 +1,15 @@
+# Armada KinD cluster config
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    image: {{ kind_node_image }}
+    {% if map_http_https %}
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: {{ host_http_port }}
+        protocol: TCP
+      - containerPort: 443
+        hostPort: {{ host_https_port }}
+        protocol: TCP
+    {% endif %}

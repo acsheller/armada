@@ -1,0 +1,15 @@
+---
+cluster_name: armada-dev
+
+# Kind binary
+kind_version: "v0.23.0"
+kind_bin: "/usr/local/bin/kind"
+kind_download_url: "https://kind.sigs.k8s.io/dl/{{ kind_version }}/kind-linux-amd64"
+
+# Kubernetes node image (pin what you use)
+kind_node_image: "kindest/node:v1.29.4"
+
+# Optional host port mappings for ingress demoing, etc.
+map_http_https: true
+host_http_port: 80
+host_https_port: 443

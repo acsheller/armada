@@ -1,0 +1,45 @@
+---
+- name: Ensure KinD cluster is present
+  hosts: targets
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/kind.yml
+
+  tasks:
+    - name: Ensure curl present
+      ansible.builtin.package:
+        name: curl
+        state: present
+
+    - name: Check for kind binary
+      ansible.builtin.stat:
+        path: "{{ kind_bin }}"
+      register: kind_stat
+
+    - name: Install kind ({{ kind_version }}) if missing
+      ansible.builtin.get_url:
+        url: "{{ kind_download_url }}"
+        dest: "{{ kind_bin }}"
+        mode: '0755'
+      when: not kind_stat.stat.exists
+
+    - name: Render KinD cluster config
+      ansible.builtin.template:
+        src: "../files/kind/cluster.yaml.j2"
+        dest: "/tmp/kind-{{ cluster_name }}.yaml"
+        mode: '0644'
+
+    - name: Check existing clusters
+      ansible.builtin.command: "{{ kind_bin }} get clusters"
+      register: clusters
+      changed_when: false
+      failed_when: false
+
+    - name: Create cluster if absent
+      ansible.builtin.command: >
+        {{ kind_bin }} create cluster
+        --name {{ cluster_name }}
+        --image {{ kind_node_image }}
+        --config /tmp/kind-{{ cluster_name }}.yaml
+      when: clusters.rc != 0 or (cluster_name not in (clusters.stdout | default('')))

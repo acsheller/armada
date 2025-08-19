@@ -1,0 +1,52 @@
+---
+- name: Retag and push images to a new registry/namespace
+  hosts: targets
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - ../group_vars/all/registry.yml
+
+  tasks:
+    - name: Login to source registry (if provided)
+      community.docker.docker_login:
+        registry_url: "{{ source_registry | default('docker.io') }}"
+        username: "{{ source_registry_username | default(omit) }}"
+        password: "{{ source_registry_password | default(omit) }}"
+      when: source_registry_username | length > 0
+      changed_when: false
+
+    - name: Login to destination registry
+      community.docker.docker_login:
+        registry_url: "{{ dest_registry }}"
+        username: "{{ dest_registry_username }}"
+        password: "{{ dest_registry_password }}"
+      changed_when: false
+
+    - name: Retag (and optionally push) each image
+      community.docker.docker_image:
+        name: >-
+          {{ (source_registry ~ '/' if source_registry|length > 0 else '') -}}
+          {{ (source_namespace ~ '/' if source_namespace|length > 0 else '') -}}
+          {{ item.name }}:{{ item.source_tag }}
+        repository: "{{ dest_registry }}/{{ dest_namespace }}/{{ item.name }}"
+        tag: "{{ item.dest_tag }}"
+        source: pull          # ensure we pull if missing locally
+        push: "{{ do_push }}"
+      loop: "{{ images_to_migrate }}"
+      loop_control:
+        label: "{{ item.name }}:{{ item.source_tag }} -> {{ dest_registry }}/{{ dest_namespace }}/{{ item.name }}:{{ item.dest_tag }}"
+
+    - name: Show resulting images locally (for confirmation)
+      community.docker.docker_image_info:
+        name: "{{ dest_registry }}/{{ dest_namespace }}/{{ item.name }}:{{ item.dest_tag }}"
+      loop: "{{ images_to_migrate }}"
+      register: info_result
+
+    - name: Print summary
+      ansible.builtin.debug:
+        msg: >-
+          Migrated {{ item.item.name }}:{{ item.item.dest_tag }}
+          -> {{ item.images[0].RepoTags | default([]) }}
+      loop: "{{ info_result.results | default([]) }}"
+      when: item.images is defined and item.images | length > 0

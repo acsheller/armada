@@ -1,0 +1,26 @@
+---
+- name: Remove dangling Docker images (<none> tags)
+  hosts: targets
+  become: true
+  gather_facts: false
+
+  vars:
+    prune_images: true
+    prune_containers: false
+    prune_volumes: false
+    prune_networks: false
+
+  tasks:
+    - name: Prune Docker objects (dangling only)
+      community.docker.docker_prune:
+        containers: "{{ prune_containers }}"
+        images: "{{ prune_images }}"
+        images_filters:
+          dangling: "true"
+        networks: "{{ prune_networks }}"
+        volumes: "{{ prune_volumes }}"
+      register: prune_result
+
+    - name: Show what was removed
+      ansible.builtin.debug:
+        var: prune_result

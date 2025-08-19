@@ -1,0 +1,14 @@
+---
+- name: Delete KinD cluster
+  hosts: targets
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/kind.yml
+
+  tasks:
+    - name: Delete cluster (ignore if it doesn't exist)
+      ansible.builtin.command: "{{ kind_bin }} delete cluster --name {{ cluster_name }}"
+      register: del
+      failed_when: false
+      changed_when: del.rc == 0

@@ -1,0 +1,26 @@
+---
+# Where images are pulled from (can be Docker Hub or any registry)
+source_registry: ""            # e.g. "docker.io" or "ghcr.io" (empty means Docker Hub)
+source_namespace: ""           # e.g. "library" or your org on source side
+
+# Where to push
+dest_registry: "registry.example.com"
+dest_namespace: "myteam"
+
+# Credentials (use `ansible-vault` to protect these)
+source_registry_username: ""
+source_registry_password: ""
+dest_registry_username: "YOUR_USER"
+dest_registry_password: "CHANGE_ME"
+
+# Images to retag/push (add as many as you like)
+images_to_migrate:
+  - name: "myapp"
+    source_tag: "1.0.3"
+    dest_tag: "1.0.3"
+  - name: "worker"
+    source_tag: "2025.08.18"
+    dest_tag: "2025.08.18"
+
+# Optional: toggle pushing (helpful for dry runs)
+do_push: true
