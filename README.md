@@ -20,6 +20,18 @@ Think of it as your fleet of automation tools for container cleanup, retagging, 
 - `playbooks/` – where the magic happens (`docker_prune.yml`, `retag_and_push.yml`)
 - `Makefile` – shortcuts for common tasks
 
+## Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+ansible-galaxy collection install -r requirements.yml -p ./collections
+# later: deactivate
+```
+
+
 ## Usage
 
 ### Install dependencies
