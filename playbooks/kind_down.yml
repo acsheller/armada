@@ -7,8 +7,47 @@
     - ../group_vars/all/kind.yml
 
   tasks:
-    - name: Delete cluster (ignore if it doesn't exist)
-      ansible.builtin.command: "{{ kind_bin }} delete cluster --name {{ cluster_name }}"
-      register: del
+    - name: Check for kind binary
+      ansible.builtin.stat:
+        path: "{{ kind_bin }}"
+      register: kind_stat
+
+    - name: End early if kind is not installed
+      ansible.builtin.meta: end_play
+      when: not kind_stat.stat.exists
+
+    - name: Get existing clusters
+      ansible.builtin.command: "{{ kind_bin }} get clusters"
+      register: clusters
+      changed_when: false
       failed_when: false
-      changed_when: del.rc == 0
+
+    - name: Delete cluster if present
+      ansible.builtin.command: "{{ kind_bin }} delete cluster --name {{ cluster_name }}"
+      when: clusters.rc == 0 and (cluster_name in (clusters.stdout | default('')))
+      register: kind_delete
+      changed_when: kind_delete.rc == 0
+      failed_when: false
+
+    - name: Remove kubeconfig context
+      become: false
+      ansible.builtin.command: kubectl config delete-context kind-{{ cluster_name }}
+      register: ctx_delete
+      failed_when: false
+      changed_when: "'deleted' in (ctx_delete.stdout + ctx_delete.stderr | default(''))"
+
+    - name: Remove kubeconfig cluster
+      become: false
+      ansible.builtin.command: kubectl config delete-cluster kind-{{ cluster_name }}
+      register: cl_delete
+      failed_when: false
+      changed_when: "'deleted' in (cl_delete.stdout + cl_delete.stderr | default(''))"
+
+    - name: Unset current context if it was this cluster
+      become: false
+      ansible.builtin.shell: |
+        if [ "$(kubectl config current-context 2>/dev/null)" = "kind-{{ cluster_name }}" ]; then
+          kubectl config unset current-context
+        fi
+      changed_when: false
+      failed_when: false

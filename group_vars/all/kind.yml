@@ -13,3 +13,5 @@ kind_node_image: "kindest/node:v1.29.4"
 map_http_https: true
 host_http_port: 80
 host_https_port: 443
+
+worker_count: 2

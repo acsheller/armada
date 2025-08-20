@@ -5,6 +5,8 @@
   gather_facts: false
   vars_files:
     - ../group_vars/all/kind.yml
+  vars:
+    kubeconfig_path: "{{ playbook_dir }}/../.kube/kind-{{ cluster_name }}.yaml"
 
   tasks:
     - name: Ensure curl present
@@ -43,3 +45,30 @@
         --image {{ kind_node_image }}
         --config /tmp/kind-{{ cluster_name }}.yaml
       when: clusters.rc != 0 or (cluster_name not in (clusters.stdout | default('')))
+
+    - name: Ensure .kube dir inside project
+      become: false
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/../.kube"
+        state: directory
+        mode: '0700'
+
+    - name: Export kubeconfig for this cluster
+      become: false
+      ansible.builtin.command: "{{ kind_bin }} get kubeconfig --name {{ cluster_name }}"
+      register: kc
+      changed_when: false
+
+    - name: Write kubeconfig file (project-local)
+      become: false
+      ansible.builtin.copy:
+        dest: "{{ kubeconfig_path }}"
+        mode: '0600'
+        content: "{{ kc.stdout }}"
+
+    - name: Show how to use kubeconfig
+      become: false
+      ansible.builtin.debug:
+        msg: |
+          Cluster is up! To use it, run:
+            export KUBECONFIG={{ kubeconfig_path }}
