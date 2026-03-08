@@ -31,6 +31,16 @@ ansible-galaxy collection install -r requirements.yml -p ./collections
 # later: deactivate
 ```
 
+## Useful Alias'  (optional)
+Put these in the .bashrc for convenience.  
+
+```.bash
+alias ap='ansible-playbook'
+
+alias usearmada='export KUBECONFIG=$HOME/armada/.kube/kind-armada-dev.yaml'
+alias armada='cd ~/armada && source .venv/bin/activate'
+```
+
 
 ## Usage
 
