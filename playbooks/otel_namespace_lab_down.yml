@@ -1,0 +1,19 @@
+---
+- name: Delete OTel namespace lab
+  hosts: targets
+  become: false
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/otel_namespace_lab.yml
+
+  tasks:
+    - name: Delete each OTel lab namespace
+      ansible.builtin.command: kubectl delete namespace {{ item.name }} --ignore-not-found=true
+      loop: "{{ otel_lab_namespaces | reverse | list }}"
+      register: namespace_delete
+      changed_when: namespace_delete.rc == 0
+      failed_when: namespace_delete.rc != 0
+
+    - name: Print deletion results
+      ansible.builtin.debug:
+        var: namespace_delete.results
