@@ -1,0 +1,40 @@
+---
+- name: Create OTel namespace lab
+  hosts: targets
+  become: false
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all/otel_namespace_lab.yml
+
+  tasks:
+    - name: Ensure each OTel lab namespace exists
+      ansible.builtin.command: kubectl create namespace {{ item.name }}
+      loop: "{{ otel_lab_namespaces }}"
+      register: namespace_create
+      changed_when: namespace_create.rc == 0
+      failed_when: namespace_create.rc != 0 and ('AlreadyExists' not in (namespace_create.stderr | default('')))
+
+    - name: Apply labels to each namespace
+      ansible.builtin.command: >-
+        kubectl label namespace {{ item.name }}
+        {% for k, v in item.labels.items() %}{{ k }}={{ v }} {% endfor %}
+        --overwrite
+      loop: "{{ otel_lab_namespaces }}"
+      changed_when: true
+
+    - name: Apply annotations to each namespace
+      ansible.builtin.command: >-
+        kubectl annotate namespace {{ item.name }}
+        {% for k, v in item.annotations.items() %}{{ k }}={{ v }} {% endfor %}
+        --overwrite
+      loop: "{{ otel_lab_namespaces }}"
+      changed_when: true
+
+    - name: Show created namespaces
+      ansible.builtin.command: kubectl get namespaces -l app.kubernetes.io/part-of=otel-lab
+      register: otel_namespaces
+      changed_when: false
+
+    - name: Print summary
+      ansible.builtin.debug:
+        var: otel_namespaces.stdout_lines

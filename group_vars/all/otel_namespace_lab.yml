@@ -1,0 +1,13 @@
+otel_lab_namespaces:
+  - name: otel-system
+    labels:
+      app.kubernetes.io/part-of: otel-lab
+      armada.dev/environment: lab
+    annotations:
+      armada.dev/owner: platform
+  - name: otel-lab
+    labels:
+      app.kubernetes.io/part-of: otel-lab
+      armada.dev/environment: lab
+    annotations:
+      armada.dev/owner: observability
