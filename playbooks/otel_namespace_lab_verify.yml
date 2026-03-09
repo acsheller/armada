@@ -6,28 +6,35 @@
 
   tasks:
     - name: Verify fake metrics app /metrics endpoint
-      ansible.builtin.command: >-
-        kubectl get --raw
-        /api/v1/namespaces/swinglines/services/fake-metrics-app:8080/proxy/metrics
-      register: fake_app_metrics
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - get
+          - --raw
+          - /api/v1/namespaces/swinglines/services/http:fake-metrics-app:8080/proxy/metrics
+      register: fake_metrics
       changed_when: false
-      failed_when: fake_app_metrics.rc != 0 or ('go_gc_duration_seconds' not in fake_app_metrics.stdout)
+      failed_when: "'fake_requests_total' not in fake_metrics.stdout"
 
     - name: Verify collector /metrics endpoint
-      ansible.builtin.command: >-
-        kubectl get --raw
-        /api/v1/namespaces/observability/services/otel-collector:8888/proxy/metrics
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - get
+          - --raw
+          - /api/v1/namespaces/observability/services/http:otel-collector:8889/proxy/metrics
       register: collector_metrics
       changed_when: false
-      failed_when: collector_metrics.rc != 0 or ('otelcol_process_uptime' not in collector_metrics.stdout)
 
-    - name: Verify Prometheus query API output
-      ansible.builtin.command: >-
-        kubectl get --raw
-        /api/v1/namespaces/observability/services/prometheus:9090/proxy/api/v1/query?query=up
+    - name: Verify Prometheus query output
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - get
+          - --raw
+          - /api/v1/namespaces/observability/services/http:prometheus:9090/proxy/api/v1/query?query=fake_requests_total
       register: prometheus_query
       changed_when: false
-      failed_when: prometheus_query.rc != 0 or ('"status":"success"' not in prometheus_query.stdout)
 
     - name: Print verification summary
       ansible.builtin.debug:

@@ -18,3 +18,4 @@ collections/
 *.vault_pass
 
 .venv/
+.kube/kind-armada-dev.yaml

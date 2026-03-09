@@ -53,13 +53,22 @@
       register: otel_namespaces
       changed_when: false
 
-    - name: Show deployed workloads
-      ansible.builtin.command: kubectl get deploy -n swinglines && kubectl get deploy -n observability
-      register: otel_workloads
+    - name: Show deployed workloads in swinglines
+      ansible.builtin.command: kubectl get deploy -n swinglines
+      register: swinglines_workloads
+      changed_when: false
+
+    - name: Show deployed workloads in observability
+      ansible.builtin.command: kubectl get deploy -n observability
+      register: observability_workloads
       changed_when: false
 
     - name: Print summary
       ansible.builtin.debug:
         msg:
-          - "Namespaces: {{ otel_namespaces.stdout_lines }}"
-          - "Workloads: {{ otel_workloads.stdout_lines }}"
+          - "Namespaces:"
+          - "{{ otel_namespaces.stdout_lines }}"
+          - "Swinglines workloads:"
+          - "{{ swinglines_workloads.stdout_lines }}"
+          - "Observability workloads:"
+          - "{{ observability_workloads.stdout_lines }}"
