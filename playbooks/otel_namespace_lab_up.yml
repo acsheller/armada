@@ -34,7 +34,7 @@
       ansible.builtin.command: kubectl apply -f {{ item }}
       loop: "{{ otel_lab_manifests }}"
       register: manifest_apply
-      changed_when: "'created' in stdout or 'configured' in stdout"
+      changed_when: true
 
     - name: Wait for fake metrics app deployment to be ready
       ansible.builtin.command: kubectl rollout status deployment/fake-metrics-app -n swinglines --timeout=120s
