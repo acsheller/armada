@@ -7,6 +7,12 @@
     - ../group_vars/all/otel_namespace_lab.yml
 
   tasks:
+    - name: Delete OTel baseline manifests
+      ansible.builtin.command: kubectl delete -f {{ item }} --ignore-not-found=true
+      loop: "{{ otel_lab_manifests | reverse | list }}"
+      register: manifest_delete
+      changed_when: false
+
     - name: Delete each OTel lab namespace
       ansible.builtin.command: kubectl delete namespace {{ item.name }} --ignore-not-found=true
       loop: "{{ otel_lab_namespaces | reverse | list }}"
@@ -16,4 +22,6 @@
 
     - name: Print deletion results
       ansible.builtin.debug:
-        var: namespace_delete.results
+        msg:
+          - "Manifests: {{ manifest_delete.results | map(attribute='stdout') | list }}"
+          - "Namespaces: {{ namespace_delete.results | map(attribute='stdout') | list }}"
