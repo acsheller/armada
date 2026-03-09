@@ -2,7 +2,7 @@ SHELL := /bin/bash
 .ONESHELL:
 .DEFAULT_GOAL := help
 
-.PHONY: help venv install prune retag kind-up kind-down lint clean
+.PHONY: help venv install prune retag kind-up kind-down otel-namespace-lab-up otel-namespace-lab-down otel-namespace-lab-verify lint clean
 
 # Toggles
 DRYRUN ?= 0
@@ -40,6 +40,16 @@ kind-down: ## Delete KinD cluster
 	@echo "👉 If you had KUBECONFIG set, you may unset it now:"
 	@echo "   unset KUBECONFIG"
 	$(RUN) rm -f $(PWD)/.kube/kind-armada-dev.yaml
+
+
+otel-namespace-lab-up: ## Deploy OTel namespace baseline lab
+	$(ACT); $(RUN) ansible-playbook $(ANSIBLE_FLAGS) playbooks/otel_namespace_lab_up.yml
+
+otel-namespace-lab-down: ## Tear down OTel namespace baseline lab
+	$(ACT); $(RUN) ansible-playbook $(ANSIBLE_FLAGS) playbooks/otel_namespace_lab_down.yml
+
+otel-namespace-lab-verify: ## Verify OTel namespace baseline lab
+	$(ACT); $(RUN) ansible-playbook $(ANSIBLE_FLAGS) playbooks/otel_namespace_lab_verify.yml
 
 lint: ## Run ansible-lint
 	$(ACT); ansible-lint

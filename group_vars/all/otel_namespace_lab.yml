@@ -1,13 +1,18 @@
 otel_lab_namespaces:
-  - name: otel-system
+  - name: swinglines
     labels:
       app.kubernetes.io/part-of: otel-lab
       armada.dev/environment: lab
     annotations:
-      armada.dev/owner: platform
-  - name: otel-lab
+      armada.dev/owner: application
+  - name: observability
     labels:
       app.kubernetes.io/part-of: otel-lab
       armada.dev/environment: lab
     annotations:
       armada.dev/owner: observability
+
+otel_lab_manifests:
+  - ../files/otel_namespace_lab/fake_metrics_app.yaml
+  - ../files/otel_namespace_lab/otel_collector.yaml
+  - ../files/otel_namespace_lab/prometheus.yaml
