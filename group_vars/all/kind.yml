@@ -14,4 +14,4 @@ map_http_https: true
 host_http_port: 80
 host_https_port: 443
 
-worker_count: 2
+worker_count: 4

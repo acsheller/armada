@@ -66,9 +66,13 @@
         mode: '0600'
         content: "{{ kc.stdout }}"
 
-    - name: Show how to use kubeconfig
-      become: false
+    - name: Display cluster access info
       ansible.builtin.debug:
         msg: |
-          Cluster is up! To use it, run:
-            export KUBECONFIG={{ kubeconfig_path }}
+          KinD cluster '{{ cluster_name }}' ready.
+
+          Kubeconfig:
+            {{ kubeconfig_path }}
+
+          Test:
+            KUBECONFIG={{ kubeconfig_path }} kubectl get nodes
