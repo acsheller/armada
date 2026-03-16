@@ -1,0 +1,33 @@
+---
+- name: Delete fake Prometheus metrics app
+  hosts: targets
+  become: false
+  gather_facts: false
+  vars:
+    fake_metrics_namespace: "{{ lookup('env', 'FAKE_METRICS_NAMESPACE') | default('swinglines', true) }}"
+    fake_metrics_name: "{{ lookup('env', 'FAKE_METRICS_NAME') | default('fake-metrics-app', true) }}"
+
+  tasks:
+    - name: Delete fake metrics service
+      kubernetes.core.k8s:
+        state: absent
+        api_version: v1
+        kind: Service
+        name: "{{ fake_metrics_name }}"
+        namespace: "{{ fake_metrics_namespace }}"
+
+    - name: Delete fake metrics deployment
+      kubernetes.core.k8s:
+        state: absent
+        api_version: apps/v1
+        kind: Deployment
+        name: "{{ fake_metrics_name }}"
+        namespace: "{{ fake_metrics_namespace }}"
+
+    - name: Delete fake metrics script config map
+      kubernetes.core.k8s:
+        state: absent
+        api_version: v1
+        kind: ConfigMap
+        name: "{{ fake_metrics_name }}-script"
+        namespace: "{{ fake_metrics_namespace }}"

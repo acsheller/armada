@@ -1,0 +1,142 @@
+---
+- name: Deploy fake Prometheus metrics app
+  hosts: targets
+  become: false
+  gather_facts: false
+  vars:
+    fake_metrics_namespace: "{{ lookup('env', 'FAKE_METRICS_NAMESPACE') | default('swinglines', true) }}"
+    fake_metrics_name: "{{ lookup('env', 'FAKE_METRICS_NAME') | default('fake-metrics-app', true) }}"
+    fake_metrics_image: "{{ lookup('env', 'FAKE_METRICS_IMAGE') | default('python:3.11-slim', true) }}"
+    fake_metrics_port: "{{ lookup('env', 'FAKE_METRICS_PORT') | default('8000', true) | int }}"
+
+  tasks:
+    - name: Ensure fake metrics namespace exists
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ fake_metrics_namespace }}"
+
+    - name: Create script config map for fake metrics app
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ fake_metrics_namespace }}"
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ fake_metrics_name }}-script"
+          data:
+            app.py: |
+              import threading
+              import time
+              from flask import Flask
+              from prometheus_client import Counter, generate_latest
+
+              app = Flask(__name__)
+              fake_counter = Counter("fake_requests_total", "A fake request counter")
+
+              def incrementer():
+                  while True:
+                      fake_counter.inc()
+                      time.sleep(2)
+
+              @app.route("/")
+              def home():
+                  return "fake metrics app\n", 200
+
+              @app.route("/metrics")
+              def metrics():
+                  return generate_latest(), 200, {"Content-Type": "text/plain; version=0.0.4"}
+
+              if __name__ == "__main__":
+                  threading.Thread(target=incrementer, daemon=True).start()
+                  app.run(host="0.0.0.0", port={{ fake_metrics_port }})
+
+    - name: Deploy fake metrics app deployment
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ fake_metrics_namespace }}"
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: "{{ fake_metrics_name }}"
+            labels:
+              app: "{{ fake_metrics_name }}"
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: "{{ fake_metrics_name }}"
+            template:
+              metadata:
+                labels:
+                  app: "{{ fake_metrics_name }}"
+                annotations:
+                  prometheus.io/scrape: "true"
+                  prometheus.io/port: "{{ fake_metrics_port | string }}"
+                  prometheus.io/path: "/metrics"
+              spec:
+                containers:
+                  - name: "{{ fake_metrics_name }}"
+                    image: "{{ fake_metrics_image }}"
+                    command: ["sh", "-c"]
+                    args:
+                      - pip install --no-cache-dir flask prometheus_client && python /app/app.py
+                    ports:
+                      - name: http
+                        containerPort: "{{ fake_metrics_port }}"
+                    readinessProbe:
+                      httpGet:
+                        path: /metrics
+                        port: http
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    livenessProbe:
+                      httpGet:
+                        path: /metrics
+                        port: http
+                      initialDelaySeconds: 10
+                      periodSeconds: 20
+                    volumeMounts:
+                      - name: app-script
+                        mountPath: /app
+                volumes:
+                  - name: app-script
+                    configMap:
+                      name: "{{ fake_metrics_name }}-script"
+
+    - name: Ensure fake metrics app service exists
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ fake_metrics_namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: "{{ fake_metrics_name }}"
+            labels:
+              app: "{{ fake_metrics_name }}"
+          spec:
+            selector:
+              app: "{{ fake_metrics_name }}"
+            ports:
+              - name: http
+                port: "{{ fake_metrics_port }}"
+                targetPort: http
+
+    - name: Wait for deployment to become available
+      kubernetes.core.k8s:
+        state: present
+        api_version: apps/v1
+        kind: Deployment
+        name: "{{ fake_metrics_name }}"
+        namespace: "{{ fake_metrics_namespace }}"
+        wait: true
+        wait_timeout: 180
+        wait_condition:
+          type: Available
+          status: "True"
