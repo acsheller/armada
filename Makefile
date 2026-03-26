@@ -54,6 +54,10 @@ lint: ## Run ansible-lint
 clean: ## Remove local collections cache
 	rm -rf ./collections
 
+bootstrap:
+	python3 -m venv .venv
+	. .venv/bin/activate && pip install -r requirements.txt
+	. .venv/bin/activate && ansible-galaxy collection install -r requirements.yml
 
 fake-metrics: ## Deploy fake metrics app into Kubernetes
 	$(ACT); KUBECONFIG=$(KUBECONFIG) FAKE_METRICS_NAMESPACE=$(FAKE_METRICS_NAMESPACE) FAKE_METRICS_NAME=$(FAKE_METRICS_NAME) FAKE_METRICS_IMAGE=$(FAKE_METRICS_IMAGE) FAKE_METRICS_PORT=$(FAKE_METRICS_PORT) \
